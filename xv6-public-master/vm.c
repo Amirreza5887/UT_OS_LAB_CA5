@@ -7,6 +7,16 @@
 #include "proc.h"
 #include "elf.h"
 
+struct my_page {
+  int page_id;
+
+};
+
+struct shared_mem {
+
+
+};
+
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 

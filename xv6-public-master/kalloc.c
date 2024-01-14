@@ -23,6 +23,19 @@ struct {
   struct run *freelist;
 } kmem;
 
+struct shared_page {
+  int id;
+  pte_t *base_pointer;
+  int ref_count;
+};
+
+struct {
+  struct spinlock lock;
+  struct shared_page pages[128];
+} shared_mem;
+
+
+
 // Initialization happens in two phases.
 // 1. main() calls kinit1() while still using entrypgdir to place just
 // the pages mapped by entrypgdir on free list.
