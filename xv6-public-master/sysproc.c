@@ -89,3 +89,27 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_open_sharedmem(void)
+{
+  int n;
+
+  if(argint(0, &n) < 0)
+    return -1;
+
+  
+
+  return 0;
+}
+
+int sys_close_sharedmem(void)
+{
+  int n;
+
+  if(argint(0, &n) < 0)
+    return -1;
+
+
+
+  return 0;
+}

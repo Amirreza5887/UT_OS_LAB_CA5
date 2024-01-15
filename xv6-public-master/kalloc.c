@@ -9,8 +9,6 @@
 #include "mmu.h"
 #include "spinlock.h"
 
-#define SHARED_PAGES_COUNT 128
-
 void freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
                    // defined by the kernel linker script in kernel.ld
@@ -24,18 +22,6 @@ struct {
   int use_lock;
   struct run *freelist;
 } kmem;
-
-struct shared_page {
-  int id;
-  pte_t base_pointer;
-  int ref_count;
-};
-
-struct {
-  struct spinlock lock;
-  struct shared_page pages[SHARED_PAGES_COUNT];
-} shared_mem;
-
 
 
 // Initialization happens in two phases.
@@ -51,23 +37,11 @@ kinit1(void *vstart, void *vend)
   freerange(vstart, vend);
 }
 
-void shared_mem_init()
-{
-
-  for (int i = 0; i < SHARED_PAGES_COUNT; i++)
-  {
-    shared_mem.pages[i].base_pointer = V2P(kalloc());
-    shared_mem.pages[i].id = i;
-    shared_mem.pages[i].ref_count = 0;
-  }
-}
-
 void
 kinit2(void *vstart, void *vend)
 {
   freerange(vstart, vend);
   kmem.use_lock = 1;
-  shared_mem_init();
 }
 
 void

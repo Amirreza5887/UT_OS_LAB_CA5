@@ -6,22 +6,70 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "spinlock.h"
 
-struct my_page {
-  int page_id;
+#define SHARED_PAGES_COUNT 128
 
+struct shared_page {
+  int id;
+  pte_t base_pointer;
+  int ref_count;
 };
 
-struct shared_mem {
+struct {
+  struct spinlock lock;
+  struct shared_page pages[SHARED_PAGES_COUNT];
+} shared_mem;
 
-
-};
+// int page_ids_with_mem[SHARED_PAGES_COUNT] = {-1};
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
+// void shared_mem_init()
+// {
+//   for (int i = 0; i < SHARED_PAGES_COUNT; i++)
+//   {
+//     // shared_mem.pages[i].base_pointer = V2P(kalloc());
+//     shared_mem.pages[i].id = i;
+//     shared_mem.pages[i].ref_count = 0;
+//   }
+// }
+
+int open_sharedmem(int page_id)
+{
+  acquire(&shared_mem.lock);
+
+  if(!shared_mem.pages[page_id].ref_count)
+  {
+    shared_mem.pages[page_id].base_pointer = V2P(kalloc());
+  }
+
+  shared_mem.pages[page_id].ref_count++;
+
+  release(&shared_mem.lock);
+
+  return shared_mem.pages[page_id].base_pointer;
+}
+
+int close_sharedmem(int page_id)
+{
+  acquire(&shared_mem.lock);
+
+  if(shared_mem.pages[page_id].ref_count > 0)
+  {
+    shared_mem.pages[page_id].ref_count--;
+  } else {
+    kfree(P2V(shared_mem.pages[page_id].base_pointer));
+    shared_mem.pages[page_id].base_pointer = 0;
+  }
+
+  release(&shared_mem.lock);
+
+  return 1;
+}
 void
 seginit(void)
 {
