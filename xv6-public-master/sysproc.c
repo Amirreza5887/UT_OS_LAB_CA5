@@ -92,24 +92,24 @@ sys_uptime(void)
 
 int sys_open_sharedmem(void)
 {
-  int n;
+  int page_id;
 
-  if(argint(0, &n) < 0)
+  if(argint(0, &page_id) < 0)
     return -1;
 
-  
+  open_sharedmem(page_id);
 
   return 0;
 }
 
 int sys_close_sharedmem(void)
 {
-  int n;
+  int page_id;
 
-  if(argint(0, &n) < 0)
+  if(argint(0, &page_id) < 0)
     return -1;
 
-
+  close_sharedmem(page_id);
 
   return 0;
 }

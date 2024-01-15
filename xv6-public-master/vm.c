@@ -419,8 +419,6 @@ int copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-
-
 char *open_sharedmem(int page_id)
 {
   acquire(&shared_mem.lock);
@@ -434,15 +432,16 @@ char *open_sharedmem(int page_id)
   pde_t *process_pgdir = myproc()->pgdir;
   uint process_size = myproc()->sz;
 
-  int virtual_address = allocuvm(process_pgdir, process_size, PGSIZE);
-  int *va_pointer = (int *)virtual_address;
-
-  mappages(process_pgdir, va_pointer, PGSIZE, V2P(phys_address), PTE_W | PTE_U);
+  int virtual_address = allocuvm(process_pgdir, process_size, process_size + PGSIZE);
+  // int *va_pointer = (int *)virtual_address;
+  mappages(process_pgdir, &virtual_address, PGSIZE, V2P(phys_address), PTE_W | PTE_U);
   
 
   shared_mem.pages[page_id].ref_count++;
 
   release(&shared_mem.lock);
+
+  cprintf("base_pointer %s\n", shared_mem.pages[page_id].base_pointer);
 
   return shared_mem.pages[page_id].base_pointer;
 }
