@@ -419,61 +419,22 @@ int copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
-char *open_sharedmem(int page_id)
-{
-  acquire(&shared_mem.lock);
-
-  if (!shared_mem.pages[page_id].ref_count)
-  {
-    shared_mem.pages[page_id].base_pointer = kalloc();
-  }
-  char *phys_address = shared_mem.pages[page_id].base_pointer;
-
-  pde_t *process_pgdir = myproc()->pgdir;
-  uint process_size = myproc()->sz;
-
-  int virtual_address = allocuvm(process_pgdir, process_size, process_size + PGSIZE);
-  int *va_pointer = (int *)virtual_address;
-  mappages(process_pgdir, va_pointer, PGSIZE, V2P(phys_address), PTE_W | PTE_U);
-  
-
-  shared_mem.pages[page_id].ref_count++;
-
-  release(&shared_mem.lock);
-
-  cprintf("base_pointer %s\n", shared_mem.pages[page_id].base_pointer);
-
-  return shared_mem.pages[page_id].base_pointer;
-}
-
-
 // char *open_sharedmem(int page_id)
 // {
-
 //   acquire(&shared_mem.lock);
 
 //   if (!shared_mem.pages[page_id].ref_count)
 //   {
-//     cprintf("in if\n");
-    
 //     shared_mem.pages[page_id].base_pointer = kalloc();
-
-//     cprintf("base_pointer:%s,,\n", shared_mem.pages[page_id].base_pointer);
-
 //   }
-//   cprintf("base_pointer: %s\n", shared_mem.pages[page_id].base_pointer);
-  
 //   char *phys_address = shared_mem.pages[page_id].base_pointer;
 
 //   pde_t *process_pgdir = myproc()->pgdir;
 //   uint process_size = myproc()->sz;
 
 //   int virtual_address = allocuvm(process_pgdir, process_size, process_size + PGSIZE);
-
-//   void *va_pointer = (void *)virtual_address;
+//   int *va_pointer = (int *)virtual_address;
 //   mappages(process_pgdir, va_pointer, PGSIZE, V2P(phys_address), PTE_W | PTE_U);
-  
-//   cprintf("base_pointer: 5\n");
 
 //   shared_mem.pages[page_id].ref_count++;
 
@@ -483,6 +444,46 @@ char *open_sharedmem(int page_id)
 
 //   return shared_mem.pages[page_id].base_pointer;
 // }
+int *open_sharedmem(int page_id)
+{
+  acquire(&shared_mem.lock);
+  pde_t *pgdir;
+
+  if (!shared_mem.pages[page_id].ref_count)
+  {
+    // cprintf("in if\n");
+    shared_mem.pages[page_id].base_pointer = kalloc();
+    if ((pgdir = (pde_t *)kalloc()) == 0)
+    {
+      panic("failure in kalloc\n");
+    }
+    // cprintf("base_pointer:%s,,\n", shared_mem.pages[page_id].base_pointer);
+  }
+
+  // cprintf("base_pointer: %s\n", shared_mem.pages[page_id].base_pointer);
+  char *phys_address = shared_mem.pages[page_id].base_pointer;
+
+  pde_t *process_pgdir = myproc()->pgdir;
+  uint process_size = myproc()->sz;
+
+  if (allocuvm(process_pgdir, process_size, process_size + PGSIZE) == 0)
+  {
+    panic("failure in allocuvm\n");
+  }
+  int *virtual_address = (int *)P2V(shared_mem.pages[page_id].base_pointer);
+
+  mappages(process_pgdir, P2V(shared_mem.pages[page_id].base_pointer), PGSIZE, V2P(phys_address), PTE_W | PTE_U);
+
+  // cprintf("base_pointer: 5\n");
+
+  shared_mem.pages[page_id].ref_count++;
+
+  release(&shared_mem.lock);
+
+  // cprintf("base_pointer %s\n", shared_mem.pages[page_id].base_pointer);
+
+  return virtual_address;
+}
 
 int close_sharedmem(int page_id)
 {
@@ -502,7 +503,6 @@ int close_sharedmem(int page_id)
 
   return 1;
 }
-
 
 // PAGEBREAK!
 //  Blank page.

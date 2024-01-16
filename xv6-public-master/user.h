@@ -23,7 +23,7 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-char* open_sharedmem(int);
+int* open_sharedmem(int);
 int close_sharedmem(int);
 
 // ulib.c

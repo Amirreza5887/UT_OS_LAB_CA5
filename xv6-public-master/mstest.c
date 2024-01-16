@@ -4,17 +4,21 @@
 
 int main()
 {
-    char *address = open_sharedmem(0);
-    *address = 0;
-    
+    int shared_page_id = 10;
+    int *address = open_sharedmem(shared_page_id);
+    *address = 1;
+
     for (int i = 0; i < 3; i++)
     {
         if (fork() == 0)
         {
-            (*address) += 1;
-            printf(1, "child %d\n", (*address));
+            int *new_address = open_sharedmem(shared_page_id);
+            *new_address += 1;
+            printf(1, "child %d %d\n", (*new_address), new_address);
+            printf(1, "child %d %d\n", (*address), address);
 
-            close_sharedmem(0);
+
+            close_sharedmem(shared_page_id);
             exit();
         }
         sleep(100);
@@ -27,7 +31,7 @@ int main()
 
     printf(1, "Final counter value: %d\n", *address);
 
-    close_sharedmem(0);
+    close_sharedmem(shared_page_id);
 
     exit();
 }
